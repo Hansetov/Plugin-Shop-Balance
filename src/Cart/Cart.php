@@ -38,6 +38,11 @@ class Cart implements Arrayable
     private Collection $giftcards;
 
     /**
+     * The amount of site balance the user wants to spend on this cart.
+     */
+    private float $balanceAmount = 0.0;
+
+    /**
      * Create a new cart instance.
      */
     private function __construct(?Session $session = null)
@@ -244,6 +249,34 @@ class Cart implements Arrayable
     }
 
     /**
+     * Get the amount that must be paid via an external payment gateway,
+     * after deducting the site balance portion chosen by the user.
+     */
+    public function gatewayTotal(): float
+    {
+        return max($this->payableTotal() - $this->getBalanceAmount(), 0.0);
+    }
+
+    /**
+     * Get the confirmed site balance amount to spend (clamped to payableTotal).
+     */
+    public function getBalanceAmount(): float
+    {
+        return min($this->balanceAmount, $this->payableTotal());
+    }
+
+    /**
+     * Set how much site balance the user wants to spend.
+     * Value is clamped to [0, payableTotal].
+     */
+    public function setBalanceAmount(float $amount): void
+    {
+        $this->balanceAmount = max(0.0, min($amount, $this->payableTotal()));
+
+        $this->save();
+    }
+
+    /**
      * Get the coupons applied to the cart.
      */
     public function coupons(): Collection
@@ -368,6 +401,8 @@ class Cart implements Arrayable
             $this->giftcards = collect();
         }
 
+        $this->balanceAmount = (float) ($content['balance_amount'] ?? 0.0);
+
         if (empty($content['items'])) {
             return;
         }
@@ -412,6 +447,7 @@ class Cart implements Arrayable
             'items' => $this->items->toArray(),
             'coupons' => $this->coupons->pluck('code')->all(),
             'giftcards' => $this->giftcards->pluck('code')->all(),
+            'balance_amount' => $this->balanceAmount,
         ];
     }
 }
