@@ -51,6 +51,7 @@ Route::prefix('cart')->name('cart.')->middleware('shop.auth')->group(function ()
     Route::match(['GET', 'POST'], '/remove/{package}', [CartController::class, 'remove'])->name('remove');
     Route::post('/clear', [CartController::class, 'clear'])->name('clear');
     Route::post('/payment', [CartController::class, 'payment'])->name('payment')->middleware('auth');
+    Route::post('/balance', [CartController::class, 'setBalance'])->name('balance')->middleware('auth');
 
     Route::prefix('coupons')->name('coupons.')->group(function () {
         Route::post('/add', [CouponController::class, 'add'])->name('add');
